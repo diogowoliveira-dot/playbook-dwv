@@ -43,6 +43,29 @@ function TypeBadges({ types }: { types: string[] }) {
   )
 }
 
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function IconCalendar({ className = 'w-3 h-3' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  )
+}
+
+function IconRefresh({ className = 'w-3 h-3' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M1 4v6h6M23 20v-6h-6" />
+      <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
+    </svg>
+  )
+}
+
 export function MaterialCard({ material, isMaster, viewMode, index, onEdit, onDelete, onClick }: Props) {
   const catColor = material.category === 'estudo'
     ? 'bg-dwv-blue/15 text-dwv-blue border-dwv-blue/25'
@@ -50,6 +73,9 @@ export function MaterialCard({ material, isMaster, viewMode, index, onEdit, onDe
 
   const contentTypes = getContentTypes(material)
   const linksCount = material.material_links?.length || 0
+  const createdDate = formatDate(material.created_at)
+  const updatedDate = formatDate(material.updated_at)
+  const wasUpdated = material.updated_at !== material.created_at
 
   if (viewMode === 'list') {
     return (
@@ -61,7 +87,16 @@ export function MaterialCard({ material, isMaster, viewMode, index, onEdit, onDe
         <div className="flex-shrink-0">{typeIcon(material.type)}</div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-white truncate">{material.title}</h3>
-          <p className="text-xs text-dwv-muted truncate mt-0.5">{material.description || 'Sem descricao'}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="flex items-center gap-1 text-[10px] text-dwv-muted">
+              <IconCalendar className="w-2.5 h-2.5" /> {createdDate}
+            </span>
+            {wasUpdated && (
+              <span className="flex items-center gap-1 text-[10px] text-dwv-amber/60">
+                <IconRefresh className="w-2.5 h-2.5" /> {updatedDate}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`text-[10px] px-2 py-0.5 rounded-full border ${catColor}`}>{material.category}</span>
@@ -80,7 +115,7 @@ export function MaterialCard({ material, isMaster, viewMode, index, onEdit, onDe
 
   return (
     <div
-      className="bg-dwv-card border border-dwv-border rounded-xl p-5 hover:border-dwv-red/30 hover:shadow-[0_0_20px_rgba(232,57,42,0.08)] hover:-translate-y-0.5 transition-all cursor-pointer animate-fade-in-up group"
+      className="bg-dwv-card border border-dwv-border rounded-xl p-5 hover:border-dwv-red/30 hover:shadow-[0_0_20px_rgba(232,57,42,0.08)] hover:-translate-y-0.5 transition-all cursor-pointer animate-fade-in-up group flex flex-col"
       style={{ animationDelay: `${index * 60}ms` }}
       onClick={() => onClick?.(material)}
     >
@@ -93,9 +128,22 @@ export function MaterialCard({ material, isMaster, viewMode, index, onEdit, onDe
           </div>
         )}
       </div>
-      <h3 className="text-sm font-semibold text-white mb-2 line-clamp-2">{material.title}</h3>
-      <p className="text-xs text-dwv-muted mb-4 line-clamp-3">{material.description || 'Sem descricao'}</p>
-      <div className="flex items-center gap-2 mt-auto flex-wrap">
+      <h3 className="text-sm font-semibold text-white mb-1.5 line-clamp-2">{material.title}</h3>
+      <p className="text-xs text-dwv-muted mb-3 line-clamp-2 flex-1">{material.description || 'Sem descricao'}</p>
+
+      {/* Dates */}
+      <div className="flex items-center gap-3 mb-3">
+        <span className="flex items-center gap-1 text-[10px] text-dwv-muted">
+          <IconCalendar className="w-2.5 h-2.5" /> Criado {createdDate}
+        </span>
+        {wasUpdated && (
+          <span className="flex items-center gap-1 text-[10px] text-dwv-amber/60">
+            <IconRefresh className="w-2.5 h-2.5" /> Atualizado {updatedDate}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-[10px] px-2 py-0.5 rounded-full border ${catColor}`}>{material.category}</span>
         <TypeBadges types={contentTypes} />
       </div>
