@@ -40,7 +40,15 @@ function getGoogleDriveEmbedUrl(url: string): string | null {
 
 /** Check if URL is a direct PDF (Supabase Storage or other direct links) */
 function isDirectPdf(url: string): boolean {
-  return url.toLowerCase().endsWith('.pdf') || url.includes('/storage/v1/object/public/materiais/')
+  return url.toLowerCase().endsWith('.pdf') ||
+    (url.includes('/storage/v1/object/public/materiais/') && url.includes('/pdfs/'))
+}
+
+/** Check if URL is an image */
+function isImage(url: string): boolean {
+  const lower = url.toLowerCase()
+  return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp') ||
+    (url.includes('/storage/v1/object/public/materiais/') && url.includes('/images/'))
 }
 
 export function ContentViewer({ url, type, label, onClose }: Props) {
@@ -50,35 +58,51 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
   const isSite = type === 'site'
 
   if (type === 'pdf') {
-    const driveEmbed = getGoogleDriveEmbedUrl(url)
-    if (driveEmbed) {
+    // Check if it's actually an image file uploaded under "pdf" type
+    if (isImage(url)) {
       viewerContent = (
-        <iframe
-          src={driveEmbed}
-          className="w-full h-full rounded-lg"
-          allow="autoplay"
-          onLoad={() => setLoading(false)}
-          title={label}
-        />
-      )
-    } else if (isDirectPdf(url)) {
-      viewerContent = (
-        <iframe
-          src={`${url}#toolbar=1&navpanes=1&scrollbar=1`}
-          className="w-full h-full rounded-lg"
-          onLoad={() => setLoading(false)}
-          title={label}
-        />
+        <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt={label}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onLoad={() => setLoading(false)}
+            onError={() => setLoading(false)}
+          />
+        </div>
       )
     } else {
-      viewerContent = (
-        <iframe
-          src={url}
-          className="w-full h-full rounded-lg"
-          onLoad={() => setLoading(false)}
-          title={label}
-        />
-      )
+      const driveEmbed = getGoogleDriveEmbedUrl(url)
+      if (driveEmbed) {
+        viewerContent = (
+          <iframe
+            src={driveEmbed}
+            className="w-full h-full rounded-lg"
+            allow="autoplay"
+            onLoad={() => setLoading(false)}
+            title={label}
+          />
+        )
+      } else if (isDirectPdf(url)) {
+        viewerContent = (
+          <iframe
+            src={`${url}#toolbar=1&navpanes=1&scrollbar=1`}
+            className="w-full h-full rounded-lg"
+            onLoad={() => setLoading(false)}
+            title={label}
+          />
+        )
+      } else {
+        viewerContent = (
+          <iframe
+            src={url}
+            className="w-full h-full rounded-lg"
+            onLoad={() => setLoading(false)}
+            title={label}
+          />
+        )
+      }
     }
   } else if (type === 'video') {
     const youtubeId = getYouTubeId(url)
@@ -152,7 +176,9 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
     : type === 'site' ? 'bg-dwv-amber/15 text-dwv-amber'
     : 'bg-dwv-green/15 text-dwv-green'
 
-  const loadingLabel = type === 'pdf' ? 'documento'
+  const isImgFile = type === 'pdf' && isImage(url)
+  const loadingLabel = isImgFile ? 'imagem'
+    : type === 'pdf' ? 'documento'
     : type === 'video' ? 'video'
     : 'pagina'
 

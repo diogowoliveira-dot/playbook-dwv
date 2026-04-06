@@ -99,8 +99,9 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     // Reset file input
     e.target.value = ''
 
-    if (file.type !== 'application/pdf') {
-      alert('Apenas arquivos PDF sao permitidos')
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Apenas arquivos PDF, JPG, PNG e WebP sao permitidos')
       return
     }
 
@@ -116,12 +117,14 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
       const { supabase } = await import('@/lib/supabase-client')
       const timestamp = Date.now()
       const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-      const filePath = `pdfs/${timestamp}_${safeName}`
+      const isImage = file.type.startsWith('image/')
+      const folder = isImage ? 'images' : 'pdfs'
+      const filePath = `${folder}/${timestamp}_${safeName}`
 
       const { data, error } = await supabase.storage
         .from('materiais')
         .upload(filePath, file, {
-          contentType: 'application/pdf',
+          contentType: file.type,
           upsert: false,
         })
 
@@ -139,7 +142,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
 
       // If label is empty, set the filename as label
       if (!form.links[index]?.label) {
-        const cleanName = file.name.replace('.pdf', '').replace(/[_-]/g, ' ')
+        const cleanName = file.name.replace(/\.(pdf|jpe?g|png|webp)$/i, '').replace(/[_-]/g, ' ')
         updateLink(index, 'label', cleanName)
       }
     } catch {
@@ -169,7 +172,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -306,7 +309,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
                   {link.type === 'pdf' && isSupabaseUrl(link.url) && (
                     <p className="text-[10px] text-dwv-green ml-[72px] flex items-center gap-1">
                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 6L9 17l-5-5" /></svg>
-                      PDF hospedado no sistema — sera exibido no visualizador inline
+                      Arquivo hospedado no sistema — sera exibido no visualizador inline
                     </p>
                   )}
                 </div>
