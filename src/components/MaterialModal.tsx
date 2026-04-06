@@ -16,7 +16,6 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     title: '',
     description: '',
     category: 'estudo',
-    type: 'pdf',
     links: [],
   })
   const [saving, setSaving] = useState(false)
@@ -28,10 +27,9 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
         title: material.title,
         description: material.description || '',
         category: material.category,
-        type: material.type,
         links: (material.material_links || [])
           .sort((a, b) => a.sort_order - b.sort_order)
-          .map(l => ({ label: l.label, url: l.url })),
+          .map(l => ({ label: l.label, url: l.url, type: l.type || material.type })),
       })
     }
   }, [material])
@@ -54,7 +52,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
       const res = await fetch('/api/ai/describe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: form.title, type: form.type, category: form.category }),
+        body: JSON.stringify({ title: form.title, type: form.links[0]?.type || 'link', category: form.category }),
       })
       const data = await res.json()
       if (data.description) {
@@ -67,9 +65,10 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     }
   }
 
-  const addLink = () => setForm(prev => ({ ...prev, links: [...prev.links, { label: '', url: '' }] }))
+  const addLink = (type: 'pdf' | 'video' | 'link' = 'link') =>
+    setForm(prev => ({ ...prev, links: [...prev.links, { label: '', url: '', type }] }))
   const removeLink = (i: number) => setForm(prev => ({ ...prev, links: prev.links.filter((_, idx) => idx !== i) }))
-  const updateLink = (i: number, field: 'label' | 'url', value: string) => {
+  const updateLink = (i: number, field: 'label' | 'url' | 'type', value: string) => {
     setForm(prev => ({
       ...prev,
       links: prev.links.map((l, idx) => idx === i ? { ...l, [field]: value } : l),
@@ -101,31 +100,17 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
             />
           </div>
 
-          {/* Category & Type */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-dwv-muted uppercase tracking-wider">Categoria</label>
-              <select
-                value={form.category}
-                onChange={e => setForm(prev => ({ ...prev, category: e.target.value as 'estudo' | 'venda' }))}
-                className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50"
-              >
-                <option value="estudo">Estudo</option>
-                <option value="venda">Venda</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-dwv-muted uppercase tracking-wider">Tipo</label>
-              <select
-                value={form.type}
-                onChange={e => setForm(prev => ({ ...prev, type: e.target.value as 'pdf' | 'video' | 'link' }))}
-                className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50"
-              >
-                <option value="pdf">PDF</option>
-                <option value="video">Video</option>
-                <option value="link">Link</option>
-              </select>
-            </div>
+          {/* Category */}
+          <div>
+            <label className="text-xs text-dwv-muted uppercase tracking-wider">Categoria</label>
+            <select
+              value={form.category}
+              onChange={e => setForm(prev => ({ ...prev, category: e.target.value as 'estudo' | 'venda' }))}
+              className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50"
+            >
+              <option value="estudo">Estudo</option>
+              <option value="venda">Venda</option>
+            </select>
           </div>
 
           {/* Description */}
@@ -154,33 +139,52 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
             />
           </div>
 
-          {/* Links */}
+          {/* Links / Conteudos */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-dwv-muted uppercase tracking-wider">Links</label>
-              <button onClick={addLink} className="flex items-center gap-1 text-xs text-dwv-red hover:text-white transition-colors">
-                <IconPlus className="w-3.5 h-3.5" /> Adicionar
-              </button>
+              <label className="text-xs text-dwv-muted uppercase tracking-wider">Conteudos</label>
+              <div className="flex items-center gap-1">
+                <button onClick={() => addLink('pdf')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-dwv-red/10 text-dwv-red hover:bg-dwv-red/20 transition-colors">
+                  <IconPlus className="w-3 h-3" /> PDF
+                </button>
+                <button onClick={() => addLink('video')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-dwv-blue/10 text-dwv-blue hover:bg-dwv-blue/20 transition-colors">
+                  <IconPlus className="w-3 h-3" /> Video
+                </button>
+                <button onClick={() => addLink('link')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-dwv-green/10 text-dwv-green hover:bg-dwv-green/20 transition-colors">
+                  <IconPlus className="w-3 h-3" /> Link
+                </button>
+              </div>
             </div>
             {form.links.length === 0 && (
-              <p className="text-xs text-dwv-muted italic">Nenhum link adicionado</p>
+              <p className="text-xs text-dwv-muted italic py-2">Nenhum conteudo adicionado. Use os botoes acima para adicionar PDF, Video ou Link.</p>
             )}
             <div className="space-y-2">
               {form.links.map((link, i) => (
-                <div key={i} className="flex gap-2 items-start">
+                <div key={i} className="flex gap-2 items-center">
+                  <select
+                    value={link.type}
+                    onChange={e => updateLink(i, 'type', e.target.value)}
+                    className={`w-16 bg-dwv-input border border-dwv-border rounded-lg px-1.5 py-2 text-[10px] font-medium text-center focus:outline-none focus:border-dwv-red/50 ${
+                      link.type === 'pdf' ? 'text-dwv-red' : link.type === 'video' ? 'text-dwv-blue' : 'text-dwv-green'
+                    }`}
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="video">Video</option>
+                    <option value="link">Link</option>
+                  </select>
                   <input
                     value={link.label}
                     onChange={e => updateLink(i, 'label', e.target.value)}
-                    placeholder="Label"
+                    placeholder="Nome do conteudo"
                     className="flex-1 bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
                   />
                   <input
                     value={link.url}
                     onChange={e => updateLink(i, 'url', e.target.value)}
                     placeholder="https://..."
-                    className="flex-[2] bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
+                    className="flex-[1.5] bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
                   />
-                  <button onClick={() => removeLink(i)} className="p-2 text-dwv-muted hover:text-dwv-red">
+                  <button onClick={() => removeLink(i)} className="p-2 text-dwv-muted hover:text-dwv-red flex-shrink-0">
                     <IconTrash className="w-3.5 h-3.5" />
                   </button>
                 </div>

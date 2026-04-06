@@ -25,6 +25,7 @@ export interface MaterialLink {
   material_id: string
   label: string
   url: string
+  type: 'pdf' | 'video' | 'link'
   sort_order: number
   created_at: string
 }
@@ -33,6 +34,5 @@ export interface MaterialFormData {
   title: string
   description: string
   category: 'estudo' | 'venda'
-  type: 'pdf' | 'video' | 'link'
-  links: { label: string; url: string }[]
+  links: { label: string; url: string; type: 'pdf' | 'video' | 'link' }[]
 }

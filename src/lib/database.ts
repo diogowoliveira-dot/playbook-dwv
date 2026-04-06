@@ -1,5 +1,5 @@
 import { supabase } from './supabase-client'
-import type { Profile, Material, MaterialLink } from './types'
+import type { Profile, Material } from './types'
 
 // ── Auth ──
 export async function signIn(email: string, password: string) {
@@ -59,7 +59,7 @@ export async function createMaterial(
   category: string,
   type: string,
   createdBy: string,
-  links: { label: string; url: string }[]
+  links: { label: string; url: string; type: string }[]
 ) {
   const { data: material, error } = await supabase
     .from('materials')
@@ -73,6 +73,7 @@ export async function createMaterial(
       material_id: material.id,
       label: l.label,
       url: l.url,
+      type: l.type,
       sort_order: i,
     }))
     const { error: linkErr } = await supabase.from('material_links').insert(linkRows)
@@ -87,12 +88,14 @@ export async function updateMaterial(
   title: string,
   description: string,
   category: string,
-  type: string,
-  links: { label: string; url: string }[]
+  links: { label: string; url: string; type: string }[]
 ) {
+  // Determine primary type from links
+  const primaryType = links.length > 0 ? links[0].type : 'link'
+
   const { error } = await supabase
     .from('materials')
-    .update({ title, description, category, type })
+    .update({ title, description, category, type: primaryType })
     .eq('id', id)
   if (error) throw error
 
@@ -103,6 +106,7 @@ export async function updateMaterial(
       material_id: id,
       label: l.label,
       url: l.url,
+      type: l.type,
       sort_order: i,
     }))
     const { error: linkErr } = await supabase.from('material_links').insert(linkRows)

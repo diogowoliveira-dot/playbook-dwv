@@ -46,11 +46,13 @@ export default function DashboardPage() {
 
   const handleSave = useCallback(async (data: MaterialFormData) => {
     try {
+      // Primary type = first link type, or 'link' if no links
+      const primaryType = data.links.length > 0 ? data.links[0].type : 'link'
       if (editMaterial) {
-        await updateMaterial(editMaterial.id, data.title, data.description, data.category, data.type, data.links)
+        await updateMaterial(editMaterial.id, data.title, data.description, data.category, data.links)
         showToast('Material atualizado!')
       } else {
-        await createMaterial(data.title, data.description, data.category, data.type, profile!.id, data.links)
+        await createMaterial(data.title, data.description, data.category, primaryType, profile!.id, data.links)
         showToast('Material criado!')
       }
       refresh()
