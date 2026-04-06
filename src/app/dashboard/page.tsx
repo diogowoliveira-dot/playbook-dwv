@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMaterials } from '@/hooks/useMaterials'
-import { createMaterial, updateMaterial, deleteMaterial, getProfiles } from '@/lib/database'
+import { getProfiles } from '@/lib/database'
 import type { Material, MaterialFormData } from '@/lib/types'
 import { StatsRow } from '@/components/StatsRow'
 import { SearchBar } from '@/components/SearchBar'
@@ -47,36 +47,72 @@ export default function DashboardPage() {
   const handleSave = useCallback(async (data: MaterialFormData) => {
     if (!profile) {
       showToast('Erro: perfil nao encontrado. Faca logout e login novamente.', 'error')
-      return
+      throw new Error('Perfil nao encontrado')
     }
-    try {
-      // Primary type = first link type, or 'link' if no links
-      const primaryType = data.links.length > 0 ? data.links[0].type : 'link'
-      if (editMaterial) {
-        await updateMaterial(editMaterial.id, data.title, data.description, data.category, data.links)
-        showToast('Material atualizado!')
-      } else {
-        await createMaterial(data.title, data.description, data.category, primaryType, profile.id, data.links)
-        showToast('Material criado!')
+
+    const primaryType = data.links.length > 0 ? data.links[0].type : 'link'
+
+    if (editMaterial) {
+      // UPDATE via server API
+      const res = await fetch('/api/materials', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editMaterial.id,
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          links: data.links,
+          userId: profile.id,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        showToast(`Erro: ${result.error}`, 'error')
+        throw new Error(result.error)
       }
-      refresh()
-    } catch (err) {
-      console.error('Erro ao salvar material:', err)
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-      showToast(`Erro ao salvar: ${msg}`, 'error')
+      showToast('Material atualizado!')
+    } else {
+      // CREATE via server API
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          type: primaryType,
+          createdBy: profile.id,
+          links: data.links,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        showToast(`Erro: ${result.error}`, 'error')
+        throw new Error(result.error)
+      }
+      showToast('Material criado!')
     }
+    refresh()
   }, [editMaterial, profile, refresh])
 
   const handleDelete = useCallback(async (m: Material) => {
     if (!confirm(`Deletar "${m.title}"?`)) return
     try {
-      await deleteMaterial(m.id)
+      const res = await fetch('/api/materials', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.id, userId: profile?.id }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error)
       showToast('Material deletado!')
       refresh()
-    } catch {
-      showToast('Erro ao deletar', 'error')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao deletar'
+      showToast(msg, 'error')
     }
-  }, [refresh])
+  }, [refresh, profile])
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
