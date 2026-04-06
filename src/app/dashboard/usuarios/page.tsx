@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { getProfiles, signUp } from '@/lib/database'
+import { getProfiles } from '@/lib/database'
 import { supabase } from '@/lib/supabase-client'
 import type { Profile } from '@/lib/types'
 import { StatsRow } from '@/components/StatsRow'
@@ -39,12 +39,22 @@ export default function UsuariosPage() {
 
   const handleAddUser = async (data: { name: string; email: string; password: string; role: 'master' | 'user' }) => {
     try {
-      await signUp(data.email, data.password, data.name)
-      // Note: role is set via trigger (defaults to 'user'). For 'master', would need service_role update.
-      showToast('Usuario criado!')
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/users/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify(data),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Erro ao criar usuario')
+      showToast(`Usuario "${data.name}" criado! Email de convite enviado.`)
       fetchUsers()
-    } catch {
-      showToast('Erro ao criar usuario', 'error')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao criar usuario'
+      showToast(msg, 'error')
     }
   }
 

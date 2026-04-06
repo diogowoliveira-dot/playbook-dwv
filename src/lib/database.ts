@@ -25,11 +25,30 @@ export async function signOut() {
 export async function getCurrentProfile(): Promise<Profile | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  const { data } = await supabase
+
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
+
+  // If profile doesn't exist (e.g. user created before trigger), auto-create it
+  if (error || !data) {
+    const name = user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario'
+    const role = user.user_metadata?.role || 'user'
+    const { data: newProfile } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        name,
+        email: user.email!,
+        role,
+      })
+      .select()
+      .single()
+    return newProfile
+  }
+
   return data
 }
 
