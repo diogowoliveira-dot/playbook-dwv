@@ -9,7 +9,7 @@ export function useMaterials() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'estudo' | 'venda'>('all')
-  const [typeFilter, setTypeFilter] = useState<'all' | 'pdf' | 'video' | 'link'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'pdf' | 'video' | 'link' | 'site'>('all')
 
   const fetchMaterials = useCallback(async () => {
     setLoading(true)
@@ -43,7 +43,7 @@ export function useMaterials() {
   }
 
   const cycleType = () => {
-    const order: ('all' | 'pdf' | 'video' | 'link')[] = ['all', 'pdf', 'video', 'link']
+    const order: ('all' | 'pdf' | 'video' | 'site' | 'link')[] = ['all', 'pdf', 'video', 'site', 'link']
     const idx = order.indexOf(typeFilter)
     setTypeFilter(order[(idx + 1) % order.length])
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import type { Material } from '@/lib/types'
-import { typeIcon, IconEdit, IconTrash, IconPdf, IconVideo, IconLink } from './Icons'
+import { typeIcon, IconEdit, IconTrash, IconPdf, IconVideo, IconLink, IconGlobe } from './Icons'
 
 interface Props {
   material: Material
@@ -27,9 +27,11 @@ function TypeBadges({ types }: { types: string[] }) {
       {types.map(t => {
         const color = t === 'pdf' ? 'bg-dwv-red/10 text-dwv-red/80'
           : t === 'video' ? 'bg-dwv-blue/10 text-dwv-blue/80'
+          : t === 'site' ? 'bg-dwv-amber/10 text-dwv-amber/80'
           : 'bg-dwv-green/10 text-dwv-green/80'
         const icon = t === 'pdf' ? <IconPdf className="w-3 h-3" />
           : t === 'video' ? <IconVideo className="w-3 h-3" />
+          : t === 'site' ? <IconGlobe className="w-3 h-3" />
           : <IconLink className="w-3 h-3" />
         return (
           <span key={t} className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 ${color}`}>

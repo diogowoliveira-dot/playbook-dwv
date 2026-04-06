@@ -137,10 +137,20 @@ export function IconExternalLink({ className = 'w-4 h-4' }: { className?: string
   )
 }
 
+export function IconGlobe({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z" />
+    </svg>
+  )
+}
+
 export function typeIcon(type: string) {
   switch (type) {
     case 'pdf': return <IconPdf className="w-5 h-5 text-dwv-red" />
     case 'video': return <IconVideo className="w-5 h-5 text-dwv-blue" />
+    case 'site': return <IconGlobe className="w-5 h-5 text-dwv-amber" />
     case 'link': return <IconLink className="w-5 h-5 text-dwv-green" />
     default: return null
   }

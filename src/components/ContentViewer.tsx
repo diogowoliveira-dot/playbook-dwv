@@ -33,7 +33,6 @@ function getVimeoId(url: string): string | null {
 function getGoogleDriveEmbedUrl(url: string): string | null {
   const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/)
   if (match) return `https://drive.google.com/file/d/${match[1]}/preview`
-  // Also handle open?id= format
   const match2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/)
   if (match2) return `https://drive.google.com/file/d/${match2[1]}/preview`
   return null
@@ -47,8 +46,8 @@ function isDirectPdf(url: string): boolean {
 export function ContentViewer({ url, type, label, onClose }: Props) {
   const [loading, setLoading] = useState(true)
 
-  // Determine what to render
   let viewerContent: React.ReactNode
+  const isSite = type === 'site'
 
   if (type === 'pdf') {
     const driveEmbed = getGoogleDriveEmbedUrl(url)
@@ -109,7 +108,6 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
         />
       )
     } else if (driveEmbed) {
-      // Google Drive video - use preview embed
       viewerContent = (
         <iframe
           src={driveEmbed}
@@ -121,7 +119,6 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
         />
       )
     } else {
-      // Generic video URL - try HTML5 video player
       viewerContent = (
         <video
           src={url}
@@ -135,9 +132,29 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
         </video>
       )
     }
+  } else if (type === 'site') {
+    // Embed site in iframe — URL stays hidden from user
+    viewerContent = (
+      <iframe
+        src={url}
+        className="w-full h-full rounded-lg bg-white"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        onLoad={() => setLoading(false)}
+        title={label}
+      />
+    )
   } else {
     viewerContent = null
   }
+
+  const badgeColor = type === 'pdf' ? 'bg-dwv-red/15 text-dwv-red'
+    : type === 'video' ? 'bg-dwv-blue/15 text-dwv-blue'
+    : type === 'site' ? 'bg-dwv-amber/15 text-dwv-amber'
+    : 'bg-dwv-green/15 text-dwv-green'
+
+  const loadingLabel = type === 'pdf' ? 'documento'
+    : type === 'video' ? 'video'
+    : 'pagina'
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md" onClick={onClose}>
@@ -148,23 +165,24 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-              type === 'pdf' ? 'bg-dwv-red/15 text-dwv-red' : 'bg-dwv-blue/15 text-dwv-blue'
-            }`}>
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${badgeColor}`}>
               {type.toUpperCase()}
             </span>
             <h3 className="text-white font-medium text-sm truncate">{label}</h3>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-dwv-text2 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <IconExternalLink className="w-3.5 h-3.5" />
-              Abrir original
-            </a>
+            {/* Hide "Abrir original" for site type — URL is confidential */}
+            {!isSite && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-dwv-text2 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <IconExternalLink className="w-3.5 h-3.5" />
+                Abrir original
+              </a>
+            )}
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-white/10 text-dwv-muted hover:text-white transition-colors"
@@ -180,7 +198,7 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
             <div className="absolute inset-0 flex items-center justify-center bg-dwv-bg2 z-10">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-dwv-red border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-dwv-muted">Carregando {type === 'pdf' ? 'documento' : 'video'}...</p>
+                <p className="text-sm text-dwv-muted">Carregando {loadingLabel}...</p>
               </div>
             </div>
           )}

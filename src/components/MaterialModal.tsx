@@ -76,7 +76,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     }
   }
 
-  const addLink = (type: 'pdf' | 'video' | 'link' = 'link') =>
+  const addLink = (type: 'pdf' | 'video' | 'link' | 'site' = 'link') =>
     setForm(prev => ({ ...prev, links: [...prev.links, { label: '', url: '', type }] }))
   const removeLink = (i: number) => setForm(prev => ({ ...prev, links: prev.links.filter((_, idx) => idx !== i) }))
   const updateLink = (i: number, field: 'label' | 'url' | 'type', value: string) => {
@@ -112,23 +112,30 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     setUploadingIndex(index)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      // Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
+      const { supabase } = await import('@/lib/supabase-client')
+      const timestamp = Date.now()
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const filePath = `pdfs/${timestamp}_${safeName}`
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
+      const { data, error } = await supabase.storage
+        .from('materiais')
+        .upload(filePath, file, {
+          contentType: 'application/pdf',
+          upsert: false,
+        })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        alert(data.error || 'Erro ao fazer upload')
+      if (error) {
+        alert('Erro ao fazer upload: ' + error.message)
         return
       }
 
+      const { data: urlData } = supabase.storage
+        .from('materiais')
+        .getPublicUrl(data.path)
+
       // Update the link URL with the uploaded file URL
-      updateLink(index, 'url', data.url)
+      updateLink(index, 'url', urlData.publicUrl)
 
       // If label is empty, set the filename as label
       if (!form.links[index]?.label) {
@@ -229,6 +236,9 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
                 <button onClick={() => addLink('video')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-dwv-blue/10 text-dwv-blue hover:bg-dwv-blue/20 transition-colors">
                   <IconPlus className="w-3 h-3" /> Video
                 </button>
+                <button onClick={() => addLink('site')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-colors">
+                  <IconPlus className="w-3 h-3" /> Site
+                </button>
                 <button onClick={() => addLink('link')} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-dwv-green/10 text-dwv-green hover:bg-dwv-green/20 transition-colors">
                   <IconPlus className="w-3 h-3" /> Link
                 </button>
@@ -245,11 +255,12 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
                       value={link.type}
                       onChange={e => updateLink(i, 'type', e.target.value)}
                       className={`w-16 bg-dwv-input border border-dwv-border rounded-lg px-1.5 py-2 text-[10px] font-medium text-center focus:outline-none focus:border-dwv-red/50 ${
-                        link.type === 'pdf' ? 'text-dwv-red' : link.type === 'video' ? 'text-dwv-blue' : 'text-dwv-green'
+                        link.type === 'pdf' ? 'text-dwv-red' : link.type === 'video' ? 'text-dwv-blue' : link.type === 'site' ? 'text-amber-500' : 'text-dwv-green'
                       }`}
                     >
                       <option value="pdf">PDF</option>
                       <option value="video">Video</option>
+                      <option value="site">Site</option>
                       <option value="link">Link</option>
                     </select>
                     <input
@@ -268,7 +279,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
                     <input
                       value={link.url}
                       onChange={e => updateLink(i, 'url', e.target.value)}
-                      placeholder={link.type === 'pdf' ? 'URL do PDF ou faca upload abaixo' : link.type === 'video' ? 'URL do video (YouTube, Vimeo, Google Drive)' : 'https://...'}
+                      placeholder={link.type === 'pdf' ? 'URL do PDF ou faca upload abaixo' : link.type === 'video' ? 'URL do video (YouTube, Vimeo, Google Drive)' : link.type === 'site' ? 'URL do site (sera exibido inline, URL oculta)' : 'https://...'}
                       className={`flex-1 bg-dwv-input border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50 ${
                         isSupabaseUrl(link.url) ? 'border-dwv-green/40' : 'border-dwv-border'
                       }`}

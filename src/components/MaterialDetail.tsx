@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Material } from '@/lib/types'
-import { IconX, IconExternalLink, IconPdf, IconVideo, IconLink } from './Icons'
+import { IconX, IconExternalLink, IconPdf, IconVideo, IconLink, IconGlobe } from './Icons'
 import { ContentViewer } from './ContentViewer'
 
 interface Props {
@@ -14,6 +14,7 @@ function linkTypeIcon(type: string) {
   switch (type) {
     case 'pdf': return <IconPdf className="w-4 h-4 text-dwv-red" />
     case 'video': return <IconVideo className="w-4 h-4 text-dwv-blue" />
+    case 'site': return <IconGlobe className="w-4 h-4 text-dwv-amber" />
     case 'link': return <IconLink className="w-4 h-4 text-dwv-green" />
     default: return <IconExternalLink className="w-4 h-4 text-dwv-muted" />
   }
@@ -22,6 +23,7 @@ function linkTypeIcon(type: string) {
 function linkTypeBadge(type: string) {
   const color = type === 'pdf' ? 'text-dwv-red bg-dwv-red/10'
     : type === 'video' ? 'text-dwv-blue bg-dwv-blue/10'
+    : type === 'site' ? 'text-dwv-amber bg-dwv-amber/10'
     : 'text-dwv-green bg-dwv-green/10'
   return <span className={`text-[10px] px-1.5 py-0.5 rounded ${color} uppercase font-medium`}>{type}</span>
 }
@@ -51,8 +53,8 @@ export function MaterialDetail({ material, onClose }: Props) {
   const types = [...new Set(links.map(l => l.type || material.type))]
 
   const handleLinkClick = (link: { url: string; type: string; label: string }) => {
-    if (link.type === 'pdf' || link.type === 'video') {
-      // Open inline viewer for PDFs and videos
+    if (link.type === 'pdf' || link.type === 'video' || link.type === 'site') {
+      // Open inline viewer for PDFs, videos and sites
       setViewerLink(link)
     } else {
       // Open external link in new tab
@@ -76,7 +78,7 @@ export function MaterialDetail({ material, onClose }: Props) {
                 }`}>{material.category}</span>
                 {types.map(t => (
                   <span key={t} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    t === 'pdf' ? 'bg-dwv-red/10 text-dwv-red' : t === 'video' ? 'bg-dwv-blue/10 text-dwv-blue' : 'bg-dwv-green/10 text-dwv-green'
+                    t === 'pdf' ? 'bg-dwv-red/10 text-dwv-red' : t === 'video' ? 'bg-dwv-blue/10 text-dwv-blue' : t === 'site' ? 'bg-dwv-amber/10 text-dwv-amber' : 'bg-dwv-green/10 text-dwv-green'
                   }`}>{t.toUpperCase()}</span>
                 ))}
               </div>
@@ -100,7 +102,7 @@ export function MaterialDetail({ material, onClose }: Props) {
               <div className="flex flex-col gap-2">
                 {links.sort((a, b) => a.sort_order - b.sort_order).map(link => {
                   const linkType = link.type || material.type
-                  const isViewable = linkType === 'pdf' || linkType === 'video'
+                  const isViewable = linkType === 'pdf' || linkType === 'video' || linkType === 'site'
 
                   return (
                     <button
@@ -116,7 +118,7 @@ export function MaterialDetail({ material, onClose }: Props) {
                       {isViewable ? (
                         <span className="flex items-center gap-1 text-[10px] text-dwv-muted group-hover:text-dwv-red transition-colors flex-shrink-0">
                           {linkType === 'video' ? <IconPlay className="w-3.5 h-3.5" /> : <IconEye className="w-3.5 h-3.5" />}
-                          {linkType === 'video' ? 'Assistir' : 'Visualizar'}
+                          {linkType === 'video' ? 'Assistir' : linkType === 'site' ? 'Acessar' : 'Visualizar'}
                         </span>
                       ) : (
                         <IconExternalLink className="w-3.5 h-3.5 text-dwv-muted group-hover:text-dwv-red transition-colors flex-shrink-0" />
