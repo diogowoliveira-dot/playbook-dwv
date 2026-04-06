@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Material, MaterialFormData } from '@/lib/types'
 import { IconX, IconPlus, IconTrash, IconSparkle } from './Icons'
 
@@ -8,6 +8,14 @@ interface Props {
   material?: Material | null
   onClose: () => void
   onSave: (data: MaterialFormData) => Promise<void>
+}
+
+function IconUpload({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+    </svg>
+  )
 }
 
 export function MaterialModal({ material, onClose, onSave }: Props) {
@@ -20,6 +28,9 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
   })
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingUploadIndex = useRef<number | null>(null)
 
   useEffect(() => {
     if (material) {
@@ -75,6 +86,65 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     }))
   }
 
+  const handleUploadClick = (index: number) => {
+    pendingUploadIndex.current = index
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    const index = pendingUploadIndex.current
+    if (!file || index === null) return
+
+    // Reset file input
+    e.target.value = ''
+
+    if (file.type !== 'application/pdf') {
+      alert('Apenas arquivos PDF sao permitidos')
+      return
+    }
+
+    if (file.size > 52428800) {
+      alert('Arquivo excede o limite de 50MB')
+      return
+    }
+
+    setUploadingIndex(index)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao fazer upload')
+        return
+      }
+
+      // Update the link URL with the uploaded file URL
+      updateLink(index, 'url', data.url)
+
+      // If label is empty, set the filename as label
+      if (!form.links[index]?.label) {
+        const cleanName = file.name.replace('.pdf', '').replace(/[_-]/g, ' ')
+        updateLink(index, 'label', cleanName)
+      }
+    } catch {
+      alert('Erro ao fazer upload do arquivo')
+    } finally {
+      setUploadingIndex(null)
+      pendingUploadIndex.current = null
+    }
+  }
+
+  const isSupabaseUrl = (url: string) => url.includes('/storage/v1/object/public/materiais/')
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -87,6 +157,15 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
             <IconX className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
         <div className="space-y-4">
           {/* Title */}
@@ -160,33 +239,65 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
             )}
             <div className="space-y-2">
               {form.links.map((link, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <select
-                    value={link.type}
-                    onChange={e => updateLink(i, 'type', e.target.value)}
-                    className={`w-16 bg-dwv-input border border-dwv-border rounded-lg px-1.5 py-2 text-[10px] font-medium text-center focus:outline-none focus:border-dwv-red/50 ${
-                      link.type === 'pdf' ? 'text-dwv-red' : link.type === 'video' ? 'text-dwv-blue' : 'text-dwv-green'
-                    }`}
-                  >
-                    <option value="pdf">PDF</option>
-                    <option value="video">Video</option>
-                    <option value="link">Link</option>
-                  </select>
-                  <input
-                    value={link.label}
-                    onChange={e => updateLink(i, 'label', e.target.value)}
-                    placeholder="Nome do conteudo"
-                    className="flex-1 bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
-                  />
-                  <input
-                    value={link.url}
-                    onChange={e => updateLink(i, 'url', e.target.value)}
-                    placeholder="https://..."
-                    className="flex-[1.5] bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
-                  />
-                  <button onClick={() => removeLink(i)} className="p-2 text-dwv-muted hover:text-dwv-red flex-shrink-0">
-                    <IconTrash className="w-3.5 h-3.5" />
-                  </button>
+                <div key={i} className="space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={link.type}
+                      onChange={e => updateLink(i, 'type', e.target.value)}
+                      className={`w-16 bg-dwv-input border border-dwv-border rounded-lg px-1.5 py-2 text-[10px] font-medium text-center focus:outline-none focus:border-dwv-red/50 ${
+                        link.type === 'pdf' ? 'text-dwv-red' : link.type === 'video' ? 'text-dwv-blue' : 'text-dwv-green'
+                      }`}
+                    >
+                      <option value="pdf">PDF</option>
+                      <option value="video">Video</option>
+                      <option value="link">Link</option>
+                    </select>
+                    <input
+                      value={link.label}
+                      onChange={e => updateLink(i, 'label', e.target.value)}
+                      placeholder="Nome do conteudo"
+                      className="flex-1 bg-dwv-input border border-dwv-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50"
+                    />
+                    <button onClick={() => removeLink(i)} className="p-2 text-dwv-muted hover:text-dwv-red flex-shrink-0">
+                      <IconTrash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* URL input + upload button for PDF */}
+                  <div className="flex gap-2 items-center ml-[72px]">
+                    <input
+                      value={link.url}
+                      onChange={e => updateLink(i, 'url', e.target.value)}
+                      placeholder={link.type === 'pdf' ? 'URL do PDF ou faca upload abaixo' : link.type === 'video' ? 'URL do video (YouTube, Vimeo, Google Drive)' : 'https://...'}
+                      className={`flex-1 bg-dwv-input border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dwv-red/50 ${
+                        isSupabaseUrl(link.url) ? 'border-dwv-green/40' : 'border-dwv-border'
+                      }`}
+                    />
+                    {link.type === 'pdf' && (
+                      <button
+                        onClick={() => handleUploadClick(i)}
+                        disabled={uploadingIndex === i}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all flex-shrink-0 ${
+                          uploadingIndex === i
+                            ? 'bg-dwv-red/20 text-dwv-red animate-pulse'
+                            : isSupabaseUrl(link.url)
+                            ? 'bg-dwv-green/10 text-dwv-green hover:bg-dwv-green/20'
+                            : 'bg-dwv-red/10 text-dwv-red hover:bg-dwv-red/20'
+                        }`}
+                      >
+                        <IconUpload className="w-3.5 h-3.5" />
+                        {uploadingIndex === i ? 'Enviando...' : isSupabaseUrl(link.url) ? 'Enviado' : 'Upload'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Upload success indicator */}
+                  {link.type === 'pdf' && isSupabaseUrl(link.url) && (
+                    <p className="text-[10px] text-dwv-green ml-[72px] flex items-center gap-1">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 6L9 17l-5-5" /></svg>
+                      PDF hospedado no sistema — sera exibido no visualizador inline
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
