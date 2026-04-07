@@ -22,8 +22,12 @@ export default function DashboardPage() {
     search, setSearch,
     categoryFilter, cycleCategory,
     typeFilter, cycleType,
+    viewFilter, cycleViewFilter,
+    getViewStatus,
+    markAsViewed,
+    unseenCount,
     refresh,
-  } = useMaterials()
+  } = useMaterials(profile?.id)
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showModal, setShowModal] = useState(false)
@@ -41,6 +45,7 @@ export default function DashboardPage() {
     { label: 'Total', value: allMaterials.length, color: 'text-white' },
     { label: 'Estudo', value: allMaterials.filter(m => m.category === 'estudo').length, color: 'text-dwv-blue' },
     { label: 'Venda', value: allMaterials.filter(m => m.category === 'venda').length, color: 'text-dwv-red' },
+    { label: 'Nao vistos', value: unseenCount, color: 'text-dwv-amber' },
     ...(isMaster ? [{ label: 'Usuarios', value: userCount, color: 'text-dwv-amber' }] : []),
   ]
 
@@ -53,7 +58,6 @@ export default function DashboardPage() {
     const primaryType = data.links.length > 0 ? data.links[0].type : 'link'
 
     if (editMaterial) {
-      // UPDATE via server API
       const res = await fetch('/api/materials', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +77,6 @@ export default function DashboardPage() {
       }
       showToast('Material atualizado!')
     } else {
-      // CREATE via server API
       const res = await fetch('/api/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,6 +117,11 @@ export default function DashboardPage() {
     }
   }, [refresh, profile])
 
+  const handleMarkViewed = useCallback(async (m: Material) => {
+    await markAsViewed(m.id)
+    showToast('Marcado como visto!')
+  }, [markAsViewed])
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -140,6 +148,9 @@ export default function DashboardPage() {
           cycleCategory={cycleCategory}
           typeFilter={typeFilter}
           cycleType={cycleType}
+          viewFilter={viewFilter}
+          cycleViewFilter={cycleViewFilter}
+          unseenCount={unseenCount}
           viewMode={viewMode}
           setViewMode={setViewMode}
         />
@@ -162,9 +173,11 @@ export default function DashboardPage() {
               isMaster={!!isMaster}
               viewMode="grid"
               index={i}
+              viewStatus={getViewStatus(m)}
               onEdit={mat => { setEditMaterial(mat); setShowModal(true) }}
               onDelete={handleDelete}
               onClick={setDetailMaterial}
+              onMarkViewed={handleMarkViewed}
             />
           ))}
         </div>
@@ -177,9 +190,11 @@ export default function DashboardPage() {
               isMaster={!!isMaster}
               viewMode="list"
               index={i}
+              viewStatus={getViewStatus(m)}
               onEdit={mat => { setEditMaterial(mat); setShowModal(true) }}
               onDelete={handleDelete}
               onClick={setDetailMaterial}
+              onMarkViewed={handleMarkViewed}
             />
           ))}
         </div>

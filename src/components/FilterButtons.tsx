@@ -1,21 +1,30 @@
 'use client'
 
+import type { ViewFilter } from '@/hooks/useMaterials'
+import { IconGrid, IconList, IconEye, IconEyeOff } from './Icons'
+
 interface FilterButtonsProps {
   categoryFilter: string
   cycleCategory: () => void
   typeFilter: string
   cycleType: () => void
+  viewFilter: ViewFilter
+  cycleViewFilter: () => void
+  unseenCount: number
   viewMode: 'grid' | 'list'
   setViewMode: (v: 'grid' | 'list') => void
 }
 
-import { IconGrid, IconList } from './Icons'
-
 export function FilterButtons({
   categoryFilter, cycleCategory,
   typeFilter, cycleType,
+  viewFilter, cycleViewFilter,
+  unseenCount,
   viewMode, setViewMode,
 }: FilterButtonsProps) {
+  const viewLabel = viewFilter === 'all' ? 'Status' : viewFilter === 'new' ? 'Nao vistos' : 'Vistos'
+  const viewActive = viewFilter !== 'all'
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <button
@@ -37,6 +46,24 @@ export function FilterButtons({
         }`}
       >
         {typeFilter === 'all' ? 'Tipo' : typeFilter.toUpperCase()}
+      </button>
+      <button
+        onClick={cycleViewFilter}
+        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+          viewActive
+            ? viewFilter === 'new'
+              ? 'bg-dwv-amber/20 border-dwv-amber/40 text-dwv-amber'
+              : 'bg-dwv-green/20 border-dwv-green/40 text-dwv-green'
+            : 'bg-dwv-card border-dwv-border text-dwv-text2 hover:border-dwv-border-hover'
+        }`}
+      >
+        {viewFilter === 'viewed' ? <IconEye className="w-3.5 h-3.5" /> : <IconEyeOff className="w-3.5 h-3.5" />}
+        {viewLabel}
+        {viewFilter === 'all' && unseenCount > 0 && (
+          <span className="bg-dwv-amber text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+            {unseenCount}
+          </span>
+        )}
       </button>
       <div className="flex items-center border border-dwv-border rounded-lg overflow-hidden ml-auto">
         <button

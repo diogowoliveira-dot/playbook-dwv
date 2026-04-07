@@ -38,3 +38,10 @@ export interface MaterialFormData {
   category: 'estudo' | 'venda'
   links: { label: string; url: string; type: ContentType }[]
 }
+
+export interface MaterialView {
+  material_id: string
+  viewed_at: string
+}
+
+export type ViewStatus = 'new' | 'updated' | 'viewed'
