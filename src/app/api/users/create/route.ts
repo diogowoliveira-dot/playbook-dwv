@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         const emailRes = await fetch('https://api.sparkpost.com/api/v1/transmissions', {
           method: 'POST',
           headers: {
-            'Authorization': `${sparkpostKey}`,
+            'Authorization': sparkpostKey,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
