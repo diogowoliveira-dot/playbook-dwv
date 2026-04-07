@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { getProfiles } from '@/lib/database'
-import { supabase } from '@/lib/supabase-client'
+import { apiFetch } from '@/lib/api-client'
 import type { Profile } from '@/lib/types'
 import { StatsRow } from '@/components/StatsRow'
 import { UserTable } from '@/components/UserTable'
@@ -39,13 +39,8 @@ export default function UsuariosPage() {
 
   const handleAddUser = async (data: { name: string; email: string; password: string; role: 'master' | 'user' }) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/users/create', {
+      const res = await apiFetch('/api/users/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
         body: JSON.stringify(data),
       })
       const result = await res.json()
@@ -61,13 +56,8 @@ export default function UsuariosPage() {
   const handleDeleteUser = async (user: Profile) => {
     if (!confirm(`Remover "${user.name}"?`)) return
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/users/delete', {
+      const res = await apiFetch('/api/users/delete', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
         body: JSON.stringify({ userId: user.id }),
       })
       if (!res.ok) throw new Error('Failed')

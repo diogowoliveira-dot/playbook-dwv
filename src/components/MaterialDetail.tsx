@@ -100,7 +100,7 @@ export function MaterialDetail({ material, onClose }: Props) {
               <p className="text-sm text-dwv-muted italic">Nenhum conteudo cadastrado</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {links.sort((a, b) => a.sort_order - b.sort_order).map(link => {
+                {[...links].sort((a, b) => a.sort_order - b.sort_order).map(link => {
                   const linkType = link.type || material.type
                   const isViewable = linkType === 'pdf' || linkType === 'video' || linkType === 'site'
 

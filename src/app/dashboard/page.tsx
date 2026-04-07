@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMaterials } from '@/hooks/useMaterials'
 import { getProfiles } from '@/lib/database'
+import { apiFetch } from '@/lib/api-client'
 import type { Material, MaterialFormData } from '@/lib/types'
 import { StatsRow } from '@/components/StatsRow'
 import { SearchBar } from '@/components/SearchBar'
@@ -58,16 +59,14 @@ export default function DashboardPage() {
     const primaryType = data.links.length > 0 ? data.links[0].type : 'link'
 
     if (editMaterial) {
-      const res = await fetch('/api/materials', {
+      const res = await apiFetch('/api/materials', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editMaterial.id,
           title: data.title,
           description: data.description,
           category: data.category,
           links: data.links,
-          userId: profile.id,
         }),
       })
       const result = await res.json()
@@ -77,15 +76,13 @@ export default function DashboardPage() {
       }
       showToast('Material atualizado!')
     } else {
-      const res = await fetch('/api/materials', {
+      const res = await apiFetch('/api/materials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: data.title,
           description: data.description,
           category: data.category,
           type: primaryType,
-          createdBy: profile.id,
           links: data.links,
         }),
       })
@@ -102,10 +99,9 @@ export default function DashboardPage() {
   const handleDelete = useCallback(async (m: Material) => {
     if (!confirm(`Deletar "${m.title}"?`)) return
     try {
-      const res = await fetch('/api/materials', {
+      const res = await apiFetch('/api/materials', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: m.id, userId: profile?.id }),
+        body: JSON.stringify({ id: m.id }),
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error)
@@ -115,7 +111,7 @@ export default function DashboardPage() {
       const msg = err instanceof Error ? err.message : 'Erro ao deletar'
       showToast(msg, 'error')
     }
-  }, [refresh, profile])
+  }, [refresh])
 
   const handleMarkViewed = useCallback(async (m: Material) => {
     await markAsViewed(m.id)

@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase-server'
+import { verifyAuth } from '@/lib/api-auth'
 
-// GET — Get all views for a user
+// GET — Get all views for the authenticated user
 export async function GET(req: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get('userId')
-    if (!userId) {
-      return NextResponse.json({ error: 'userId obrigatorio' }, { status: 400 })
+    const auth = await verifyAuth(req)
+    if (!auth) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
     }
 
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from('material_views')
       .select('material_id, viewed_at')
-      .eq('user_id', userId)
+      .eq('user_id', auth.userId)
 
     if (error) {
       console.error('Get views error:', error)
@@ -27,19 +28,24 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Mark material as viewed (upsert — updates viewed_at if already exists)
+// POST — Mark material as viewed for the authenticated user
 export async function POST(req: NextRequest) {
   try {
-    const { userId, materialId } = await req.json()
-    if (!userId || !materialId) {
-      return NextResponse.json({ error: 'userId e materialId obrigatorios' }, { status: 400 })
+    const auth = await verifyAuth(req)
+    if (!auth) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
+
+    const { materialId } = await req.json()
+    if (!materialId) {
+      return NextResponse.json({ error: 'materialId obrigatorio' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
     const { error } = await supabase
       .from('material_views')
       .upsert(
-        { user_id: userId, material_id: materialId, viewed_at: new Date().toISOString() },
+        { user_id: auth.userId, material_id: materialId, viewed_at: new Date().toISOString() },
         { onConflict: 'user_id,material_id' }
       )
 

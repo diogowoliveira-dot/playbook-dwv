@@ -162,7 +162,7 @@ export function ContentViewer({ url, type, label, onClose }: Props) {
       <iframe
         src={url}
         className="w-full h-full rounded-lg bg-white"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        sandbox="allow-scripts allow-forms allow-popups"
         onLoad={() => setLoading(false)}
         title={label}
       />

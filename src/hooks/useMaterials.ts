@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { getMaterials } from '@/lib/database'
+import { apiFetch } from '@/lib/api-client'
 import type { Material, MaterialView, ViewStatus } from '@/lib/types'
 
 export type ViewFilter = 'all' | 'new' | 'viewed'
@@ -30,7 +31,8 @@ export function useMaterials(userId?: string) {
   const fetchViews = useCallback(async () => {
     if (!userId) return
     try {
-      const res = await fetch(`/api/views?userId=${userId}`)
+      const res = await apiFetch('/api/views')
+      if (!res.ok) return
       const data = await res.json()
       if (data.views) setViews(data.views)
     } catch (err) {
@@ -106,11 +108,14 @@ export function useMaterials(userId?: string) {
   const markAsViewed = useCallback(async (materialId: string) => {
     if (!userId) return
     try {
-      await fetch('/api/views', {
+      const res = await apiFetch('/api/views', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, materialId }),
+        body: JSON.stringify({ materialId }),
       })
+      if (!res.ok) {
+        console.error('Failed to mark as viewed')
+        return
+      }
       // Update local state immediately
       setViews(prev => {
         const existing = prev.findIndex(v => v.material_id === materialId)
