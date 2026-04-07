@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     const sparkpostKey = process.env.SPARKPOST_API_KEY
     if (sparkpostKey) {
       try {
-        await fetch('https://api.sparkpost.com/api/v1/transmissions', {
+        const emailRes = await fetch('https://api.sparkpost.com/api/v1/transmissions', {
           method: 'POST',
           headers: {
-            'Authorization': sparkpostKey,
+            'Authorization': `${sparkpostKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -83,10 +83,18 @@ export async function POST(req: NextRequest) {
             },
           }),
         })
+        const emailResult = await emailRes.json()
+        if (!emailRes.ok) {
+          console.error('SparkPost error:', emailRes.status, JSON.stringify(emailResult))
+        } else {
+          console.log('Email enviado com sucesso para:', email)
+        }
       } catch (emailErr) {
         console.error('Email send error:', emailErr)
         // Don't fail the request if email fails
       }
+    } else {
+      console.warn('SPARKPOST_API_KEY nao configurada — email nao enviado')
     }
 
     return NextResponse.json({
