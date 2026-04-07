@@ -10,12 +10,15 @@ export interface Profile {
 
 export type ContentType = 'pdf' | 'video' | 'link' | 'site'
 
+export type Visibility = 'all' | 'master'
+
 export interface Material {
   id: string
   title: string
   description: string | null
   category: 'estudo' | 'venda'
   type: 'pdf' | 'video' | 'link' | 'site'
+  visibility: Visibility
   created_by: string | null
   created_at: string
   updated_at: string
@@ -36,6 +39,7 @@ export interface MaterialFormData {
   title: string
   description: string
   category: 'estudo' | 'venda'
+  visibility: Visibility
   links: { label: string; url: string; type: ContentType }[]
 }
 

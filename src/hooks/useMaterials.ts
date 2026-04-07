@@ -7,7 +7,7 @@ import type { Material, MaterialView, ViewStatus } from '@/lib/types'
 
 export type ViewFilter = 'all' | 'new' | 'viewed'
 
-export function useMaterials(userId?: string) {
+export function useMaterials(userId?: string, isMaster?: boolean) {
   const [materials, setMaterials] = useState<Material[]>([])
   const [views, setViews] = useState<MaterialView[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,9 +59,15 @@ export function useMaterials(userId?: string) {
     return 'viewed'
   }, [viewsMap])
 
+  // Filter by visibility: non-masters only see 'all' materials
+  const visibleMaterials = useMemo(() => {
+    if (isMaster) return materials
+    return materials.filter(m => (m.visibility || 'all') === 'all')
+  }, [materials, isMaster])
+
   // Sort: new and updated first, then viewed. Within each group, most recent first.
   const sorted = useMemo(() => {
-    return [...materials].sort((a, b) => {
+    return [...visibleMaterials].sort((a, b) => {
       const statusA = getViewStatus(a)
       const statusB = getViewStatus(b)
       const priorityA = statusA === 'new' ? 0 : statusA === 'updated' ? 1 : 2
@@ -70,7 +76,7 @@ export function useMaterials(userId?: string) {
       // Within same priority, newest first
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [materials, getViewStatus])
+  }, [visibleMaterials, getViewStatus])
 
   const filtered = useMemo(() => {
     return sorted.filter(m => {
@@ -134,11 +140,11 @@ export function useMaterials(userId?: string) {
 
   // Count of unseen (new + updated)
   const unseenCount = useMemo(() => {
-    return materials.filter(m => {
+    return visibleMaterials.filter(m => {
       const s = getViewStatus(m)
       return s === 'new' || s === 'updated'
     }).length
-  }, [materials, getViewStatus])
+  }, [visibleMaterials, getViewStatus])
 
   return {
     materials: filtered,

@@ -28,7 +28,7 @@ export default function DashboardPage() {
     markAsViewed,
     unseenCount,
     refresh,
-  } = useMaterials(profile?.id)
+  } = useMaterials(profile?.id, !!isMaster)
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showModal, setShowModal] = useState(false)
@@ -66,6 +66,7 @@ export default function DashboardPage() {
           title: data.title,
           description: data.description,
           category: data.category,
+          visibility: data.visibility,
           links: data.links,
         }),
       })
@@ -83,6 +84,7 @@ export default function DashboardPage() {
           description: data.description,
           category: data.category,
           type: primaryType,
+          visibility: data.visibility,
           links: data.links,
         }),
       })
@@ -117,6 +119,15 @@ export default function DashboardPage() {
     await markAsViewed(m.id)
     showToast('Marcado como visto!')
   }, [markAsViewed])
+
+  const handleOpenDetail = useCallback(async (m: Material) => {
+    setDetailMaterial(m)
+    // Auto-mark as viewed when opening
+    const status = getViewStatus(m)
+    if (status === 'new' || status === 'updated') {
+      await markAsViewed(m.id)
+    }
+  }, [getViewStatus, markAsViewed])
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -172,7 +183,7 @@ export default function DashboardPage() {
               viewStatus={getViewStatus(m)}
               onEdit={mat => { setEditMaterial(mat); setShowModal(true) }}
               onDelete={handleDelete}
-              onClick={setDetailMaterial}
+              onClick={handleOpenDetail}
               onMarkViewed={handleMarkViewed}
             />
           ))}
@@ -189,7 +200,7 @@ export default function DashboardPage() {
               viewStatus={getViewStatus(m)}
               onEdit={mat => { setEditMaterial(mat); setShowModal(true) }}
               onDelete={handleDelete}
-              onClick={setDetailMaterial}
+              onClick={handleOpenDetail}
               onMarkViewed={handleMarkViewed}
             />
           ))}

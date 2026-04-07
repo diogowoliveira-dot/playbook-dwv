@@ -91,6 +91,7 @@ export function MaterialCard({ material, isMaster, viewMode, index, viewStatus, 
 
   const contentTypes = getContentTypes(material)
   const linksCount = material.material_links?.length || 0
+  const isMasterOnly = material.visibility === 'master'
   const createdDate = formatDate(material.created_at)
   const updatedDate = formatDate(material.updated_at)
   const wasUpdated = material.updated_at !== material.created_at
@@ -134,6 +135,9 @@ export function MaterialCard({ material, isMaster, viewMode, index, viewStatus, 
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`text-[10px] px-2 py-0.5 rounded-full border ${catColor}`}>{material.category}</span>
+          {isMasterOnly && (
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 font-medium">Master</span>
+          )}
           <TypeBadges types={contentTypes} />
           {linksCount > 0 && <span className="text-[10px] text-dwv-muted">{linksCount} link{linksCount > 1 ? 's' : ''}</span>}
         </div>
@@ -217,6 +221,9 @@ export function MaterialCard({ material, isMaster, viewMode, index, viewStatus, 
 
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-[10px] px-2 py-0.5 rounded-full border ${catColor}`}>{material.category}</span>
+        {isMasterOnly && (
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 font-medium">Master</span>
+        )}
         <TypeBadges types={contentTypes} />
       </div>
       {linksCount > 0 && (

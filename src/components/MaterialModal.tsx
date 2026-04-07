@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { Material, MaterialFormData } from '@/lib/types'
+import type { Material, MaterialFormData, Visibility } from '@/lib/types'
 import { IconX, IconPlus, IconTrash, IconSparkle } from './Icons'
 
 interface Props {
@@ -24,6 +24,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
     title: '',
     description: '',
     category: 'estudo',
+    visibility: 'all',
     links: [],
   })
   const [saving, setSaving] = useState(false)
@@ -38,6 +39,7 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
         title: material.title,
         description: material.description || '',
         category: material.category,
+        visibility: material.visibility || 'all',
         links: (material.material_links || [])
           .sort((a, b) => a.sort_order - b.sort_order)
           .map(l => ({ label: l.label, url: l.url, type: l.type || material.type })),
@@ -200,6 +202,25 @@ export function MaterialModal({ material, onClose, onSave }: Props) {
               <option value="estudo">Estudo</option>
               <option value="venda">Venda</option>
             </select>
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="text-xs text-dwv-muted uppercase tracking-wider">Visibilidade</label>
+            <select
+              value={form.visibility}
+              onChange={e => setForm(prev => ({ ...prev, visibility: e.target.value as Visibility }))}
+              className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50"
+            >
+              <option value="all">Todos os usuarios</option>
+              <option value="master">Somente masters</option>
+            </select>
+            {form.visibility === 'master' && (
+              <p className="text-[10px] text-dwv-amber mt-1 flex items-center gap-1">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Este material sera visivel apenas para usuarios master
+              </p>
+            )}
           </div>
 
           {/* Description */}

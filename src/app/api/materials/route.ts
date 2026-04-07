@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Apenas masters autenticados podem criar materiais' }, { status: 403 })
     }
 
-    const { title, description, category, type, links } = await req.json()
+    const { title, description, category, type, visibility, links } = await req.json()
 
     if (!title || !category || !type) {
       return NextResponse.json({ error: 'Campos obrigatorios: title, category, type' }, { status: 400 })
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Insert material
     const { data: material, error } = await supabase
       .from('materials')
-      .insert({ title, description: description || null, category, type, created_by: auth.userId })
+      .insert({ title, description: description || null, category, type, visibility: visibility || 'all', created_by: auth.userId })
       .select()
       .single()
 
@@ -60,7 +60,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Apenas masters autenticados podem editar materiais' }, { status: 403 })
     }
 
-    const { id, title, description, category, links } = await req.json()
+    const { id, title, description, category, visibility, links } = await req.json()
 
     if (!id || !title || !category) {
       return NextResponse.json({ error: 'Campos obrigatorios: id, title, category' }, { status: 400 })
@@ -72,7 +72,7 @@ export async function PUT(req: NextRequest) {
 
     const { error } = await supabase
       .from('materials')
-      .update({ title, description: description || null, category, type: primaryType })
+      .update({ title, description: description || null, category, type: primaryType, visibility: visibility || 'all' })
       .eq('id', id)
 
     if (error) {
