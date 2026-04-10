@@ -79,10 +79,20 @@ export function useMaterials(userId?: string, isMaster?: boolean) {
   }, [visibleMaterials, getViewStatus])
 
   const filtered = useMemo(() => {
+    const searchTerms = search.trim().toLowerCase().split(/\s+/).filter(Boolean)
     return sorted.filter(m => {
-      const matchSearch = !search ||
-        m.title.toLowerCase().includes(search.toLowerCase()) ||
-        (m.description || '').toLowerCase().includes(search.toLowerCase())
+      let matchSearch = true
+      if (searchTerms.length > 0) {
+        const haystack = [
+          m.title,
+          m.description || '',
+          m.category,
+          m.type,
+          m.visibility || '',
+          ...(m.material_links || []).flatMap(l => [l.label || '', l.url || '', l.type || '']),
+        ].join(' ').toLowerCase()
+        matchSearch = searchTerms.every(term => haystack.includes(term))
+      }
       const matchCat = categoryFilter === 'all' || m.category === categoryFilter
       const matchType = typeFilter === 'all' || m.type === typeFilter
       const status = getViewStatus(m)
