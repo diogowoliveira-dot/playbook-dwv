@@ -63,11 +63,14 @@ export default function LoginPage() {
             <>
               <h2 className="text-lg font-semibold text-white mb-5">Entrar</h2>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4" autoComplete="on">
                 <div>
-                  <label className="text-xs text-dwv-muted uppercase tracking-wider">Email</label>
+                  <label htmlFor="login-email" className="text-xs text-dwv-muted uppercase tracking-wider">Email</label>
                   <input
+                    id="login-email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
@@ -76,10 +79,13 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-dwv-muted uppercase tracking-wider">Senha</label>
+                  <label htmlFor="login-password" className="text-xs text-dwv-muted uppercase tracking-wider">Senha</label>
                   <div className="relative mt-1">
                     <input
+                      id="login-password"
+                      name="password"
                       type={showPw ? 'text' : 'password'}
+                      autoComplete="current-password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
@@ -124,9 +130,12 @@ export default function LoginPage() {
 
               <form onSubmit={handleForgot} className="space-y-4">
                 <div>
-                  <label className="text-xs text-dwv-muted uppercase tracking-wider">Email</label>
+                  <label htmlFor="forgot-email" className="text-xs text-dwv-muted uppercase tracking-wider">Email</label>
                   <input
+                    id="forgot-email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required

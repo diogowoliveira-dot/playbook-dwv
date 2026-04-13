@@ -160,12 +160,15 @@ function ResetPasswordForm() {
               <h2 className="text-lg font-semibold text-white mb-2">Redefinir Senha</h2>
               <p className="text-xs text-dwv-muted mb-5">Escolha uma nova senha para sua conta.</p>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
                 <div>
-                  <label className="text-xs text-dwv-muted uppercase tracking-wider">Nova Senha</label>
+                  <label htmlFor="new-password" className="text-xs text-dwv-muted uppercase tracking-wider">Nova Senha</label>
                   <div className="relative mt-1">
                     <input
+                      id="new-password"
+                      name="new-password"
                       type={showPw ? 'text' : 'password'}
+                      autoComplete="new-password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
@@ -183,9 +186,12 @@ function ResetPasswordForm() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-dwv-muted uppercase tracking-wider">Confirmar Senha</label>
+                  <label htmlFor="confirm-password" className="text-xs text-dwv-muted uppercase tracking-wider">Confirmar Senha</label>
                   <input
+                    id="confirm-password"
+                    name="confirm-password"
                     type={showPw ? 'text' : 'password'}
+                    autoComplete="new-password"
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     required

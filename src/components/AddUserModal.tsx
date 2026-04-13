@@ -42,15 +42,15 @@ export function AddUserModal({ onClose, onSave }: Props) {
         <div className="space-y-4">
           <div>
             <label className="text-xs text-dwv-muted uppercase tracking-wider">Nome</label>
-            <input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
+            <input name="name" autoComplete="off" value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
           </div>
           <div>
             <label className="text-xs text-dwv-muted uppercase tracking-wider">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
+            <input name="email" type="email" autoComplete="off" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
           </div>
           <div>
             <label className="text-xs text-dwv-muted uppercase tracking-wider">Senha</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
+            <input name="new-password" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 w-full bg-dwv-input border border-dwv-border rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-dwv-red/50" />
           </div>
           <div>
             <label className="text-xs text-dwv-muted uppercase tracking-wider">Role</label>
