@@ -23,8 +23,11 @@ export async function signOut() {
 }
 
 export async function resetPassword(email: string) {
+  const siteUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : (process.env.NEXT_PUBLIC_SITE_URL || 'https://playbook-dwv.vercel.app')
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://playbook-dwv.vercel.app/login/reset',
+    redirectTo: `${siteUrl}/login/reset`,
   })
   if (error) throw error
 }

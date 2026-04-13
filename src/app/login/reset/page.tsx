@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { updatePassword } from '@/lib/database'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPw, setShowPw] = useState(false)
@@ -14,26 +16,63 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
+  const [linkError, setLinkError] = useState(false)
 
   useEffect(() => {
-    // Supabase automatically handles the token from the URL hash
-    // and establishes a session when the page loads
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setSessionReady(true)
-      }
-      if (event === 'SIGNED_IN') {
-        setSessionReady(true)
-      }
-    })
+    let mounted = true
 
-    // Also check if there's already a session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true)
-    })
+    async function handleRecovery() {
+      // 1) PKCE flow: Supabase redirects with ?code=...
+      const code = searchParams.get('code')
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (mounted) {
+          if (exchangeError) {
+            setLinkError(true)
+          } else {
+            setSessionReady(true)
+          }
+        }
+        return
+      }
 
-    return () => subscription.unsubscribe()
-  }, [])
+      // 2) Check for error in URL params (Supabase sends these when redirect fails)
+      const errorParam = searchParams.get('error')
+      const errorDescription = searchParams.get('error_description')
+      if (errorParam) {
+        if (mounted) {
+          setError(errorDescription || 'Link de recuperacao invalido ou expirado.')
+          setLinkError(true)
+        }
+        return
+      }
+
+      // 3) Implicit flow fallback: listen for auth state changes from URL hash
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (!mounted) return
+        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+          setSessionReady(true)
+        }
+      })
+
+      // 4) Check if there's already a session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (mounted && session) setSessionReady(true)
+
+      // 5) Timeout: if no session after 5s, show error
+      const timeout = setTimeout(() => {
+        if (mounted && !sessionReady) setLinkError(true)
+      }, 5000)
+
+      return () => {
+        subscription.unsubscribe()
+        clearTimeout(timeout)
+      }
+    }
+
+    handleRecovery()
+    return () => { mounted = false }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,6 +125,24 @@ export default function ResetPasswordPage() {
               </div>
               <h2 className="text-lg font-semibold text-white mb-2">Senha Redefinida!</h2>
               <p className="text-sm text-dwv-muted">Redirecionando para o sistema...</p>
+            </div>
+          ) : linkError ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-dwv-red/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-dwv-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-white mb-2">Link Expirado ou Invalido</h2>
+              <p className="text-sm text-dwv-muted mb-4">
+                {error || 'O link de recuperacao expirou ou ja foi utilizado. Solicite um novo link.'}
+              </p>
+              <button
+                onClick={() => router.push('/login')}
+                className="w-full py-3 rounded-lg text-sm font-bold bg-dwv-red hover:bg-dwv-red-dark text-white transition-colors"
+              >
+                Voltar ao Login
+              </button>
             </div>
           ) : !sessionReady ? (
             <div className="text-center py-8">
@@ -153,5 +210,17 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-dwv-bg">
+        <div className="w-6 h-6 border-2 border-dwv-red border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
